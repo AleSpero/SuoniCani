@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayer/audioplayer.dart';
 
 void main() => runApp(new MyApp());
 
+enum PlayerState {stopped, playing, paused}
+
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
@@ -23,9 +26,12 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+ AudioPlayer audioPlayer;
+final String path = "TODO";
 
 class MainView extends StatefulWidget {
   MainView({Key key, this.title}) : super(key: key);
+
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -43,17 +49,36 @@ class MainView extends StatefulWidget {
 }
 
 class MainViewState extends State<MainView> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  List<SoundItem> sounds = new List<SoundItem>();
+
+  @override
+  void initState(){
+    super.initState();
+    initAudioPlayer();
+  }
+
+  void initAudioPlayer(){
+    audioPlayer = new AudioPlayer();
+
+    audioPlayer.setErrorHandler((msg) {
+      //TODO
     });
+
+    audioPlayer.setCompletionHandler(() {
+      //TODO
+    });
+  }
+
+  void initAudioList(){
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
   }
 
   @override
@@ -64,33 +89,19 @@ class MainViewState extends State<MainView> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+
+
     return new Scaffold(
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: new Text(widget.title),
       ),
-      body: new Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: new Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
-            ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
+      body: new ListView.builder(
+          itemBuilder: null
       ),
-
-
-
       floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: null,
         tooltip: 'Stop',
         child: new Icon(Icons.stop),
       ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -99,10 +110,10 @@ class MainViewState extends State<MainView> {
 }
 
 class SoundItem extends StatefulWidget{
-  String description;
-  var rawSound; //giusto?
+ final String description;
+ final soundFileName; //giusto?
 
-  SoundItem({Key key, this.description, this.rawSound}) : super(key: key);
+  SoundItem({Key key, this.description, this.soundFileName}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => new SoundItemState();
@@ -111,9 +122,37 @@ class SoundItem extends StatefulWidget{
 
 class SoundItemState extends State<SoundItem>{
 
+  IconData iconState = Icons.play_arrow;
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
+    return new Container(
+      child: new Row(
+        children: <Widget>[
+          new Flexible(
+              child: new Text(widget.description)
+          ),
+          new IconButton(
+              icon: new Icon(iconState),
+              onPressed: () => manageSound(widget.soundFileName)
+          )
+        ],
+      ),
+    );
+  }
+
+  void manageSound(String fileName) async {
+    //riproduco suono
+     final result = await audioPlayer.play(path+fileName, isLocal: true);
+
+     if(result == 1)
+       //Success
+       setState(() {
+         //Aggiorno icona
+        iconState = Icons.pause;
+       });
+
+    //TODO setstate + azione
   }
 
 }
