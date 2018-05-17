@@ -54,6 +54,7 @@ class MainViewState extends State<MainView> {
 
   @override
   void initState(){
+    initAudioList();
     super.initState();
     initAudioPlayer();
   }
@@ -98,7 +99,8 @@ class MainViewState extends State<MainView> {
         title: new Text(widget.title),
       ),
       body: new ListView.builder(
-          itemBuilder: null
+          itemBuilder: (BuildContext context, int index) => sounds[index],
+              itemCount: sounds.length,
       ),
       floatingActionButton: new FloatingActionButton(
         onPressed: null,
@@ -127,16 +129,21 @@ class SoundItemState extends State<SoundItem>{
   @override
   Widget build(BuildContext context) {
     return new Container(
-      child: new Row(
+      margin: EdgeInsets.only(top: 20.0),
+      child: new Card(
+        elevation: 3.0,
+        margin: EdgeInsets.symmetric(vertical: 5.0,horizontal: 15.0),
+        child: new Row(
         children: <Widget>[
-          new Flexible(
-              child: new Text(widget.description)
+          new Expanded(
+              child: new Text(widget.description),
           ),
           new IconButton(
-              icon: new Icon(iconState),
+              icon: new Icon(iconState, color: Theme.of(context).primaryColor),
               onPressed: () => manageSound(widget.soundFileName)
           )
         ],
+      ),
       ),
     );
   }
