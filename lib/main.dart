@@ -3,10 +3,9 @@ import 'package:audioplayer/audioplayer.dart';
 
 void main() => runApp(new MyApp());
 
-enum PlayerState {stopped, playing, paused}
+enum PlayerState { stopped, playing, paused }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
@@ -26,12 +25,12 @@ class MyApp extends StatelessWidget {
     );
   }
 }
- AudioPlayer audioPlayer;
+
+AudioPlayer audioPlayer;
 final String path = "TODO";
 
 class MainView extends StatefulWidget {
   MainView({Key key, this.title}) : super(key: key);
-
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -49,17 +48,16 @@ class MainView extends StatefulWidget {
 }
 
 class MainViewState extends State<MainView> {
-
   List<SoundItem> sounds = new List<SoundItem>();
 
   @override
-  void initState(){
+  void initState() {
     initAudioList();
     super.initState();
     initAudioPlayer();
   }
 
-  void initAudioPlayer(){
+  void initAudioPlayer() {
     audioPlayer = new AudioPlayer();
 
     audioPlayer.setErrorHandler((msg) {
@@ -71,7 +69,7 @@ class MainViewState extends State<MainView> {
     });
   }
 
-  void initAudioList(){
+  void initAudioList() {
     sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
     sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
     sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
@@ -91,7 +89,6 @@ class MainViewState extends State<MainView> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
 
-
     return new Scaffold(
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -99,8 +96,8 @@ class MainViewState extends State<MainView> {
         title: new Text(widget.title),
       ),
       body: new ListView.builder(
-          itemBuilder: (BuildContext context, int index) => sounds[index],
-              itemCount: sounds.length,
+        itemBuilder: (BuildContext context, int index) => sounds[index],
+        itemCount: sounds.length,
       ),
       floatingActionButton: new FloatingActionButton(
         onPressed: null,
@@ -111,19 +108,18 @@ class MainViewState extends State<MainView> {
   }
 }
 
-class SoundItem extends StatefulWidget{
- final String description;
- final soundFileName; //giusto?
+class SoundItem extends StatefulWidget {
+  final String description;
+  final soundFileName; //giusto?
 
   SoundItem({Key key, this.description, this.soundFileName}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => new SoundItemState();
-
 }
 
-class SoundItemState extends State<SoundItem>{
-
+class SoundItemState extends State<SoundItem> {
+  PlayerState playerState = PlayerState.stopped;
   IconData iconState = Icons.play_arrow;
 
   @override
@@ -132,34 +128,47 @@ class SoundItemState extends State<SoundItem>{
       margin: EdgeInsets.only(top: 20.0),
       child: new Card(
         elevation: 3.0,
-        margin: EdgeInsets.symmetric(vertical: 5.0,horizontal: 15.0),
+        margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
         child: new Row(
-        children: <Widget>[
-          new Expanded(
-              child: new Text(widget.description),
-          ),
-          new IconButton(
-              icon: new Icon(iconState, color: Theme.of(context).primaryColor),
-              onPressed: () => manageSound(widget.soundFileName)
-          )
-        ],
-      ),
+          children: <Widget>[
+            new Expanded(
+              child: new Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  new Text(widget.description, style: new TextStyle(fontSize: 20.0)),
+                new Text("Prova", style:  new TextStyle(fontSize: 12.0))],
+              ),
+            ),
+            new IconButton(
+                icon: new Icon(iconState, color: Theme.of(context).primaryColor),
+                onPressed: () => manageSound(widget.soundFileName))
+          ],
+        ),
       ),
     );
   }
 
   void manageSound(String fileName) async {
     //riproduco suono
-     final result = await audioPlayer.play(path+fileName, isLocal: true);
+    final result = (playerState == PlayerState.stopped ||
+            playerState == PlayerState.paused)
+        ? await audioPlayer.play(path + fileName, isLocal: true)
+        : await audioPlayer.pause();
 
-     if(result == 1)
-       //Success
-       setState(() {
-         //Aggiorno icona
-        iconState = Icons.pause;
-       });
+    if (result == 1)
+      //Success
+      setState(() {
+        //Aggiorno icona
+        if (playerState == PlayerState.stopped ||
+            playerState == PlayerState.paused) {
+          playerState = PlayerState.playing;
+          iconState = Icons.pause;
+        } else {
+          playerState = PlayerState.paused;
+          iconState = Icons.play_arrow;
+        }
+      });
 
     //TODO setstate + azione
   }
-
 }
