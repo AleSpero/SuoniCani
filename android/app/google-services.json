@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "412426192071",
+    "firebase_url": "https://suoni-cani.firebaseio.com",
+    "project_id": "suoni-cani",
+    "storage_bucket": "suoni-cani.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412426192071:android:793efdc7705f39b0",
+        "android_client_info": {
+          "package_name": "com.alessandrosperotti.suonicani"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "412426192071-1mepcdca9ggn4bfnpbfr1sra5odiht9a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPkGXb1MDPqpvCIxglK79gbMH0RhphEiM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

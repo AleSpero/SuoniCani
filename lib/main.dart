@@ -70,14 +70,14 @@ class MainViewState extends State<MainView> {
   }
 
   void initAudioList() {
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Paccata Spero", author: "Spero", soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Paccata Camillo",  author: "Camillo",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "EH?",  author: "Manuel",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Bastaa",  author: "Fede",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Sooca!",  author: "Spero",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Weeee",  author: "Manuel (in realtà Gobbo)",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova",  author: "Prova",soundFileName: "prova"));
+    sounds.add(new SoundItem(description: "Prova",  author: "Prova",soundFileName: "prova"));
   }
 
   @override
@@ -110,9 +110,10 @@ class MainViewState extends State<MainView> {
 
 class SoundItem extends StatefulWidget {
   final String description;
+  final String author;
   final soundFileName; //giusto?
 
-  SoundItem({Key key, this.description, this.soundFileName}) : super(key: key);
+  SoundItem({Key key, this.description, this.author, this.soundFileName}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => new SoundItemState();
@@ -132,16 +133,23 @@ class SoundItemState extends State<SoundItem> {
         child: new Row(
           children: <Widget>[
             new Expanded(
-              child: new Column(
+              child: new Container(
+                child: new Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   new Text(widget.description, style: new TextStyle(fontSize: 20.0)),
-                new Text("Prova", style:  new TextStyle(fontSize: 12.0))],
+                new Text(widget.author, style:  new TextStyle(fontSize: 12.0))],
               ),
+                padding: EdgeInsets.only(left: 20.0, top: 15.0, bottom: 15.0),
+              )
             ),
-            new IconButton(
+            new Container(
+                padding: EdgeInsets.all(10.0),
+            child : new IconButton(
+                iconSize: 27.5,
                 icon: new Icon(iconState, color: Theme.of(context).primaryColor),
                 onPressed: () => manageSound(widget.soundFileName))
+            )
           ],
         ),
       ),
