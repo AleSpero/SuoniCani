@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:audioplayer/audioplayer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 void main() => runApp(new MyApp());
 
 enum PlayerState { stopped, playing, paused }
 
 class MyApp extends StatelessWidget {
+
+  final ThemeData androidTheme = new ThemeData(
+    primarySwatch: Colors.blue,
+  );
+
+  final ThemeData iosTheme = new ThemeData(
+    primaryColor: Colors.blue
+  );
+
+
+
   @override
   Widget build(BuildContext context) {
+
     return new MaterialApp(
       title: 'Suoni Cani',
-      theme: new ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
-        // counter didn't reset back to zero; the application is not restarted.
-        primarySwatch: Colors.blue,
-      ),
+      theme:  defaultTargetPlatform == TargetPlatform.android ?
+              androidTheme :
+              iosTheme,
       home: new MainView(title: 'Suoni Cani'),
     );
   }
 }
 
 AudioPlayer audioPlayer;
-final String path = "TODO";
 
 class MainView extends StatefulWidget {
   MainView({Key key, this.title}) : super(key: key);
@@ -52,7 +58,6 @@ class MainViewState extends State<MainView> {
 
   @override
   void initState() {
-    initAudioList();
     super.initState();
     initAudioPlayer();
   }
@@ -67,17 +72,6 @@ class MainViewState extends State<MainView> {
     audioPlayer.setCompletionHandler(() {
       //TODO
     });
-  }
-
-  void initAudioList() {
-    sounds.add(new SoundItem(description: "Paccata Spero", author: "Spero", soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Paccata Camillo",  author: "Camillo",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "EH?",  author: "Manuel",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Bastaa",  author: "Fede",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Sooca!",  author: "Spero",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Weeee",  author: "Manuel (in realtà Gobbo)",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova",  author: "Prova",soundFileName: "prova"));
-    sounds.add(new SoundItem(description: "Prova",  author: "Prova",soundFileName: "prova"));
   }
 
   @override
@@ -95,9 +89,38 @@ class MainViewState extends State<MainView> {
         // the App.build method, and use it to set our appbar title.
         title: new Text(widget.title),
       ),
-      body: new ListView.builder(
-        itemBuilder: (BuildContext context, int index) => sounds[index],
-        itemCount: sounds.length,
+      body: new StreamBuilder(
+        //Prendo i dati da firebase
+          stream: Firestore.instance.collection('sounds').snapshots(),
+          builder: (context, snapshot){
+            if(!snapshot.hasData) return new Center(
+              child: new CircularProgressIndicator() //TODO riguarda
+            );
+            return new ListView.builder(
+                itemCount: snapshot.data.documents.length,
+                itemBuilder: (context, index){
+                  DocumentSnapshot ds = snapshot.data.documents[index];
+
+                  Widget soundItem = new SoundItem(description: ds['description'],
+                      author: ds['author'],
+                      soundFileName: ds['soundPath']
+                  );
+
+                  if(defaultTargetPlatform == TargetPlatform.iOS) {
+                    return new Column(
+                      children: <Widget>[
+                        soundItem,
+                        new Divider(height: 1.0)
+                      ],
+                    );
+                  }
+
+                  else return soundItem;
+
+
+                }
+            );
+          }
       ),
       floatingActionButton: new FloatingActionButton(
         onPressed: null,
@@ -113,6 +136,13 @@ class SoundItem extends StatefulWidget {
   final String author;
   final soundFileName; //giusto?
 
+  final cardElevation = defaultTargetPlatform == TargetPlatform.android ? 3.0 : 0.0;
+  final horizontalCardMargin = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
+  final verticalCardMargin = defaultTargetPlatform == TargetPlatform.android ? 5.0 : 0.0;
+  final topCardMargin = defaultTargetPlatform == TargetPlatform.android ? 20.0 : 0.0;
+  final expandedPadding = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
+
+
   SoundItem({Key key, this.description, this.author, this.soundFileName}) : super(key: key);
 
   @override
@@ -120,16 +150,18 @@ class SoundItem extends StatefulWidget {
 }
 
 class SoundItemState extends State<SoundItem> {
+
+
   PlayerState playerState = PlayerState.stopped;
   IconData iconState = Icons.play_arrow;
 
   @override
   Widget build(BuildContext context) {
     return new Container(
-      margin: EdgeInsets.only(top: 20.0),
+      margin: EdgeInsets.only(top: widget.topCardMargin),
       child: new Card(
-        elevation: 3.0,
-        margin: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+        elevation: widget.cardElevation,
+        margin: EdgeInsets.symmetric(vertical: widget.verticalCardMargin, horizontal: widget.horizontalCardMargin),
         child: new Row(
           children: <Widget>[
             new Expanded(
@@ -140,7 +172,7 @@ class SoundItemState extends State<SoundItem> {
                   new Text(widget.description, style: new TextStyle(fontSize: 20.0)),
                 new Text(widget.author, style:  new TextStyle(fontSize: 12.0))],
               ),
-                padding: EdgeInsets.only(left: 20.0, top: 15.0, bottom: 15.0),
+                padding: EdgeInsets.only(left: 20.0, top: widget.expandedPadding, bottom: widget.expandedPadding),
               )
             ),
             new Container(
@@ -156,11 +188,11 @@ class SoundItemState extends State<SoundItem> {
     );
   }
 
-  void manageSound(String fileName) async {
+  void manageSound(String soundUrl) async {
     //riproduco suono
     final result = (playerState == PlayerState.stopped ||
             playerState == PlayerState.paused)
-        ? await audioPlayer.play(path + fileName, isLocal: true)
+        ? await audioPlayer.play(soundUrl)
         : await audioPlayer.pause();
 
     if (result == 1)
