@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audioplayer/audioplayer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:audioplayer/audioplayer.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 
 void main() => runApp(new MyApp());
 
@@ -129,6 +135,7 @@ class MainViewState extends State<MainView> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
 }
 
 class SoundItem extends StatefulWidget {
@@ -147,6 +154,33 @@ class SoundItem extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() => new SoundItemState();
+
+  //Saving files method
+  Future<Uint8List> _loadFileBytes(String url, /*{OnError onError}*/) async {
+    Uint8List bytes;
+    try {
+      bytes = await readBytes(url);
+    } on ClientException {
+      rethrow;
+    }
+    return bytes;
+  }
+
+  Future _loadFile() async {
+    final bytes = await _loadFileBytes("TODOO",
+      /*onError: (Exception exception) =>
+            print('_loadFile => exception $exception')*/);
+
+    final dir =null;//await getApplicationDocumentsDirectory();
+    final file = new File('${dir.path}/audio.mp3');
+
+    await file.writeAsBytes(bytes);
+   /* if (await file.exists())
+      setState(() {
+        localFilePath = file.path;
+      });*/
+  }
+
 }
 
 class SoundItemState extends State<SoundItem> {
@@ -190,6 +224,14 @@ class SoundItemState extends State<SoundItem> {
 
   void manageSound(String soundUrl) async {
     //riproduco suono
+    //TODO save local file
+    if(/*todo esiste già il file*/false){
+
+    }
+    else{
+     // audioPlayer.
+    }
+
     final result = (playerState == PlayerState.stopped ||
             playerState == PlayerState.paused)
         ? await audioPlayer.play(soundUrl)
@@ -211,4 +253,5 @@ class SoundItemState extends State<SoundItem> {
 
     //TODO setstate + azione
   }
+
 }
