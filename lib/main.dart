@@ -6,9 +6,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:audioplayer/audioplayer.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 
 void main() => runApp(new MyApp());
 
@@ -71,13 +73,18 @@ class MainViewState extends State<MainView> {
   void initAudioPlayer() {
     audioPlayer = new AudioPlayer();
 
-    audioPlayer.setErrorHandler((msg) {
-      //TODO
+    var duration;
+
+    audioPlayer.onPlayerStateChanged.listen((s) {
+      if (s == AudioPlayerState.PLAYING) {
+        setState(() => duration = audioPlayer.duration);
+      } else if (s == AudioPlayerState.STOPPED) {
+        setState(() {
+          resetItems();
+        });
+      }
     });
 
-    audioPlayer.setCompletionHandler(() {
-      //TODO
-    });
   }
 
   @override
@@ -107,9 +114,15 @@ class MainViewState extends State<MainView> {
                 itemBuilder: (context, index){
                   DocumentSnapshot ds = snapshot.data.documents[index];
 
+                  final fileName = '${ds['author']}_${ds['description'].toString()
+                  .toLowerCase()
+                      .replaceAll(" ", "_")
+                      .replaceAll("?", "")}';
+
                   Widget soundItem = new SoundItem(description: ds['description'],
                       author: ds['author'],
-                      soundFileName: ds['soundPath']
+                      soundFileUrl: ds['soundPath'],
+                      soundFileName: fileName,
                   );
 
                   if(defaultTargetPlatform == TargetPlatform.iOS) {
@@ -129,11 +142,16 @@ class MainViewState extends State<MainView> {
           }
       ),
       floatingActionButton: new FloatingActionButton(
-        onPressed: null,
+        onPressed: resetItems,
         tooltip: 'Stop',
         child: new Icon(Icons.stop),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  void resetItems(){
+    //TODO implement me
+    if(audioPlayer.state != AudioPlayerState.STOPPED) audioPlayer.stop();
   }
 
 }
@@ -141,7 +159,8 @@ class MainViewState extends State<MainView> {
 class SoundItem extends StatefulWidget {
   final String description;
   final String author;
-  final soundFileName; //giusto?
+  final soundFileName;
+  final soundFileUrl;
 
   final cardElevation = defaultTargetPlatform == TargetPlatform.android ? 3.0 : 0.0;
   final horizontalCardMargin = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
@@ -150,36 +169,10 @@ class SoundItem extends StatefulWidget {
   final expandedPadding = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
 
 
-  SoundItem({Key key, this.description, this.author, this.soundFileName}) : super(key: key);
+  SoundItem({Key key, this.description, this.author, this.soundFileUrl, this.soundFileName}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => new SoundItemState();
-
-  //Saving files method
-  Future<Uint8List> _loadFileBytes(String url, /*{OnError onError}*/) async {
-    Uint8List bytes;
-    try {
-      bytes = await readBytes(url);
-    } on ClientException {
-      rethrow;
-    }
-    return bytes;
-  }
-
-  Future _loadFile() async {
-    final bytes = await _loadFileBytes("TODOO",
-      /*onError: (Exception exception) =>
-            print('_loadFile => exception $exception')*/);
-
-    final dir =null;//await getApplicationDocumentsDirectory();
-    final file = new File('${dir.path}/audio.mp3');
-
-    await file.writeAsBytes(bytes);
-   /* if (await file.exists())
-      setState(() {
-        localFilePath = file.path;
-      });*/
-  }
 
 }
 
@@ -214,7 +207,7 @@ class SoundItemState extends State<SoundItem> {
             child : new IconButton(
                 iconSize: 27.5,
                 icon: new Icon(iconState, color: Theme.of(context).primaryColor),
-                onPressed: () => manageSound(widget.soundFileName))
+                onPressed: () => manageSound(widget))
             )
           ],
         ),
@@ -222,23 +215,37 @@ class SoundItemState extends State<SoundItem> {
     );
   }
 
-  void manageSound(String soundUrl) async {
+  Future _loadFile(SoundItem item) async {
+    setState(() {
+      iconState = Icons.cloud_download;
+    });
+    final bytes = await _loadFileBytes(item.soundFileUrl);
+
+    final dir = await getApplicationDocumentsDirectory();
+    final file = new File('${dir.path}/${item.soundFileName}.mp3');
+
+    await file.writeAsBytes(bytes);
+  }
+
+  Future<bool> isLocal(SoundItem item) async {
+    final dir = await getApplicationDocumentsDirectory();
+    return await File('${dir.path}/${item.soundFileName}.mp3').exists();
+  }
+
+  void manageSound(SoundItem soundItem) async {
     //riproduco suono
     //TODO save local file
-    if(/*todo esiste già il file*/false){
+    if(!await isLocal(soundItem)){
+    await _loadFile(soundItem);
+    }
 
-    }
-    else{
-     // audioPlayer.
-    }
+    final dir = await getApplicationDocumentsDirectory();
 
     final result = (playerState == PlayerState.stopped ||
             playerState == PlayerState.paused)
-        ? await audioPlayer.play(soundUrl)
+        ? await audioPlayer.play('${dir.path}/${soundItem.soundFileName}.mp3', isLocal: true)
         : await audioPlayer.pause();
 
-    if (result == 1)
-      //Success
       setState(() {
         //Aggiorno icona
         if (playerState == PlayerState.stopped ||
@@ -251,7 +258,17 @@ class SoundItemState extends State<SoundItem> {
         }
       });
 
-    //TODO setstate + azione
+  }
+
+  //Saving files method
+  Future<Uint8List> _loadFileBytes(String url) async {
+    Uint8List bytes;
+    try {
+      bytes = await readBytes(url);
+    } on ClientException {
+      rethrow;
+    }
+    return bytes;
   }
 
 }
