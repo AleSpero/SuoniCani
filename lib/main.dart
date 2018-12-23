@@ -75,16 +75,6 @@ class MainViewState extends State<MainView> {
 
     var duration;
 
-    audioPlayer.onPlayerStateChanged.listen((s) {
-      if (s == AudioPlayerState.PLAYING) {
-        setState(() => duration = audioPlayer.duration);
-      } else if (s == AudioPlayerState.STOPPED) {
-        setState(() {
-          resetItems();
-        });
-      }
-    });
-
   }
 
   @override
@@ -140,11 +130,6 @@ class MainViewState extends State<MainView> {
                 }
             );
           }
-      ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: resetItems,
-        tooltip: 'Stop',
-        child: new Icon(Icons.stop),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
@@ -165,7 +150,7 @@ class SoundItem extends StatefulWidget {
   final cardElevation = defaultTargetPlatform == TargetPlatform.android ? 3.0 : 0.0;
   final horizontalCardMargin = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
   final verticalCardMargin = defaultTargetPlatform == TargetPlatform.android ? 5.0 : 0.0;
-  final topCardMargin = defaultTargetPlatform == TargetPlatform.android ? 20.0 : 0.0;
+  final topCardMargin = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
   final expandedPadding = defaultTargetPlatform == TargetPlatform.android ? 15.0 : 0.0;
 
 
@@ -178,12 +163,24 @@ class SoundItem extends StatefulWidget {
 
 class SoundItemState extends State<SoundItem> {
 
-
+  String currentSoundName;
   PlayerState playerState = PlayerState.stopped;
   IconData iconState = Icons.play_arrow;
+  Widget buttonWidget;
 
   @override
   Widget build(BuildContext context) {
+
+
+    if(buttonWidget == null) {
+      buttonWidget = new IconButton(
+          iconSize: 27.5,
+          icon: new Icon(iconState, color: Theme
+              .of(context)
+              .primaryColor),
+          onPressed: () => manageSound(widget));
+    }
+
     return new Container(
       margin: EdgeInsets.only(top: widget.topCardMargin),
       child: new Card(
@@ -204,10 +201,7 @@ class SoundItemState extends State<SoundItem> {
             ),
             new Container(
                 padding: EdgeInsets.all(10.0),
-            child : new IconButton(
-                iconSize: 27.5,
-                icon: new Icon(iconState, color: Theme.of(context).primaryColor),
-                onPressed: () => manageSound(widget))
+            child : buttonWidget
             )
           ],
         ),
@@ -216,15 +210,13 @@ class SoundItemState extends State<SoundItem> {
   }
 
   Future _loadFile(SoundItem item) async {
-    setState(() {
-      iconState = Icons.cloud_download;
-    });
     final bytes = await _loadFileBytes(item.soundFileUrl);
 
     final dir = await getApplicationDocumentsDirectory();
     final file = new File('${dir.path}/${item.soundFileName}.mp3');
 
     await file.writeAsBytes(bytes);
+
   }
 
   Future<bool> isLocal(SoundItem item) async {
@@ -236,27 +228,84 @@ class SoundItemState extends State<SoundItem> {
     //riproduco suono
     //TODO save local file
     if(!await isLocal(soundItem)){
+      setState(() {
+        debugPrint("Set widget to loading");
+        buttonWidget = Center( child:
+            Container(
+              margin: defaultTargetPlatform == TargetPlatform.android ?
+              EdgeInsets.only(right: 12) : EdgeInsets.only(top: 14, bottom: 14, right: 12),
+          constraints: BoxConstraints.tight(Size.square(20)),
+            child: CircularProgressIndicator(strokeWidth: 3)
+        )
+        );
+      });
     await _loadFile(soundItem);
+
+
+    //Reimposto il bottoncino
+      setState(() {
+        iconState = Icons.pause;
+        buttonWidget =  new IconButton(
+            iconSize: 27.5,
+            icon: new Icon(iconState, color: Theme.of(context).primaryColor),
+            onPressed: () => manageSound(widget));
+      });
+
+    debugPrint("Set widget to play/pause");
+
+
     }
 
     final dir = await getApplicationDocumentsDirectory();
 
-    final result = (playerState == PlayerState.stopped ||
-            playerState == PlayerState.paused)
-        ? await audioPlayer.play('${dir.path}/${soundItem.soundFileName}.mp3', isLocal: true)
-        : await audioPlayer.pause();
+    debugPrint("Playing ${soundItem.soundFileName}");
+
+    if(playerState == PlayerState.stopped || playerState == PlayerState.paused) {
+      if(currentSoundName != soundItem.soundFileName) await audioPlayer.stop();
+      currentSoundName = soundItem.soundFileName;
+      await audioPlayer.play('${dir.path}/${soundItem.soundFileName}.mp3', isLocal: true);
+    }
+    else await audioPlayer.pause();
 
       setState(() {
         //Aggiorno icona
         if (playerState == PlayerState.stopped ||
             playerState == PlayerState.paused) {
           playerState = PlayerState.playing;
-          iconState = Icons.pause;
+          //Reimposto il bottoncino
+          setState(() {
+            iconState = Icons.pause;
+            buttonWidget =  new IconButton(
+                iconSize: 27.5,
+                icon: new Icon(iconState, color: Theme.of(context).primaryColor),
+                onPressed: () => manageSound(widget));
+          });
         } else {
           playerState = PlayerState.paused;
-          iconState = Icons.play_arrow;
+          //Reimposto il bottoncino
+          setState(() {
+            iconState = Icons.play_arrow;
+            buttonWidget =  new IconButton(
+                iconSize: 27.5,
+                icon: new Icon(iconState, color: Theme.of(context).primaryColor),
+                onPressed: () => manageSound(widget));
+          });
         }
       });
+
+
+    audioPlayer.onPlayerStateChanged.listen((s) {
+       if (s == AudioPlayerState.COMPLETED) {
+         //Reimposto il bottoncino
+         setState(() {
+           iconState = Icons.play_arrow;
+           buttonWidget =  new IconButton(
+               iconSize: 27.5,
+               icon: new Icon(iconState, color: Theme.of(context).primaryColor),
+               onPressed: () => manageSound(widget));
+         });
+      }
+    });
 
   }
 
